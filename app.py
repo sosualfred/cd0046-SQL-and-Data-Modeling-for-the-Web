@@ -151,36 +151,39 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
+    real_data = {}
     venue = Venue.query.get(venue_id)
-    if venue is None:
-        abort(404)
-
-    past_shows = Show.query.filter_by(venue_id=venue_id).filter(
-        Show.start_time < datetime.now()).all()
-    upcoming_shows = Show.query.filter_by(venue_id=venue_id).filter(
-        Show.start_time > datetime.now()).all()
-
-    past_shows_count = len(past_shows)
-    upcoming_shows_count = len(upcoming_shows)
-
-    real_data = {
-        "id": venue.id,
-        "name": venue.name,
-        "genres": venue.genres,
-        "address": venue.address,
-        "city": venue.city,
-        "state": venue.state,
-        "phone": venue.phone,
-        "website": venue.website,
-        "facebook_link": venue.facebook_link,
-        "seeking_talent": venue.seeking_talent,
-        "seeking_description": venue.description,
-        "image_link": venue.image_link,
-        "past_shows": past_shows,
-        "upcoming_shows": upcoming_shows,
-        "past_shows_count": past_shows_count,
-        "upcoming_shows_count": upcoming_shows_count,
-    }
+    real_data["id"] = venue.id
+    real_data["name"] = venue.name
+    real_data["genres"] = venue.genres.strip("{").strip("}").split(",")
+    real_data["address"] = venue.address
+    real_data["city"] = venue.city
+    real_data["state"] = venue.state
+    real_data["phone"] = venue.phone
+    real_data["website"] = venue.website
+    real_data["facebook_link"] = venue.facebook_link
+    real_data["seeking_talent"] = venue.seeking_talent
+    real_data["image_link"] = venue.image_link
+    real_data["description"] = venue.description
+    real_data["past_shows"] = []
+    real_data["upcoming_shows"] = []
+    for show in venue.shows:
+        if show.start_time < datetime.now():
+            real_data["past_shows"].append({
+                "artist_id": show.artist_id,
+                "artist_name": show.artist.name,
+                "artist_image_link": show.artist.image_link,
+                "start_time": show.start_time.strftime("%Y-%m-%d %H:%M:%S")
+            })
+        else:
+            real_data["upcoming_shows"].append({
+                "artist_id": show.artist_id,
+                "artist_name": show.artist.name,
+                "artist_image_link": show.artist.image_link,
+                "start_time": show.start_time.strftime("%Y-%m-%d %H:%M:%S")
+            })
+    past_shows_count = len(real_data["past_shows"])
+    upcoming_shows_count = len(real_data["upcoming_shows"])
 
     return render_template('pages/show_venue.html', venue=real_data)
 
