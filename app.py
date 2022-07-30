@@ -48,6 +48,13 @@ class Venue(db.Model):
     shows = db.relationship('Show', backref='venue', lazy=True)
 
 
+artist_show = db.Table('artist_show',
+                       db.Column('artist_id', db.Integer,
+                                 db.ForeignKey('artists.id')),
+                       db.Column('show_id', db.Integer, db.ForeignKey('shows.id'))
+                       )
+
+
 class Artist(db.Model):
     __tablename__ = 'artists'
     id = db.Column(db.Integer, primary_key=True)
@@ -72,6 +79,7 @@ class Show(db.Model):
     venue_id = db.Column(db.Integer, db.ForeignKey(
         'venues.id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
+    artists = db.relationship('Artist', secondary=artist_show, lazy=True)
 
 # ----------------------------------------------------------------------------#
 # Filters.
@@ -249,7 +257,7 @@ def delete_venue(venue_id):
         print(sys.exc_info())
     finally:
         db.session.close()
-    
+
     if error:
         flash('An error occurred. Venue ' +
               request.form['name'] + ' could not be deleted.')
@@ -292,7 +300,7 @@ def search_artists():
             "num_upcoming_shows": len(Show.query.filter_by(
                 artist_id=artist.id).filter(Show.start_time > datetime.now()).all())
         })
-    
+
     return render_template('pages/search_artists.html', results=real_response,
                            search_term=request.form.get('search_term', ''))
 
@@ -378,6 +386,7 @@ def edit_artist_submission(artist_id):
         flash('Artist ' + request.form['name'] + ' was successfully updated!')
         return redirect(url_for('show_artist', artist_id=artist_id))
 
+
 @app.route('/venues/<int:venue_id>/edit', methods=['GET'])
 def edit_venue(venue_id):
     real_venue = Venue.query.get(venue_id)
@@ -407,7 +416,7 @@ def edit_venue_submission(venue_id):
         print(sys.exc_info())
     finally:
         db.session.close()
-    
+
     if error:
         flash('An error occurred. Venue ' +
               request.form['name'] + ' could not be updated.')
