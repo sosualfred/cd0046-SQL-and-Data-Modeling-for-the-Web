@@ -95,14 +95,28 @@ def search_venues():
     real_search['search_term'] = search_term
     venues = Venue.query.filter(Venue.name.ilike(
         '%' + search_term + '%')).all()
-    real_search['count'] = len(venues)
+    
+    artists = Artist.query.filter(Artist.name.ilike(
+        '%' + search_term + '%')).all()
+
+    real_search['count'] = len(venues) + len(artists)
+    
     real_search['data'] = []
+
     for venue in venues:
         real_search['data'].append({
             "id": venue.id,
             "name": venue.name,
             "num_upcoming_shows": len(Show.query.filter_by(
                 venue_id=venue.id).filter(Show.start_time > datetime.now()).all())
+        })
+
+    for artist in artists:
+        real_search['data'].append({
+            "id": artist.id,
+            "name": artist.name,
+            "num_upcoming_shows": len(Show.query.filter_by(
+                artist_id=artist.id).filter(Show.start_time > datetime.now()).all())
         })
 
     return render_template('pages/search_venues.html', results=real_search,
